@@ -468,7 +468,14 @@ async fn stream_content_detection(
         .orchestrator
         .handle_streaming_content_detection(task)
         .await
-        .map_err(Error::from);
+        .map_err(Error::from)
+        .map(|result| {
+            let json_value = match result {
+                Ok(msg) => serde_json::to_value(msg).unwrap(),
+                Err(error) => serde_json::to_value(error.to_json()).unwrap(),
+            };
+            Ok::<_, Infallible>(json_value)
+        });
 
     // Wrap the response stream in Jsonlines
     Ok(JsonLines::new(response_stream).into_response())
